@@ -1,0 +1,112 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+// Function prototypes
+void displayMatrix(int matrix[3][3], int size);
+int modInverse(int a, int m);
+void computeInverseMatrix(int matrix[3][3], int size, int inverse[3][3]);
+void matrixMultiply(int A[3][3], int B[3][3], int result[3][3], int size);
+
+// Function to solve Hill Cipher Key (Known Plaintext Attack)
+void solveKeyMatrix(int plaintext[3][3], int ciphertext[3][3], int size, int keyMatrix[3][3]) {
+    int inversePlaintext[3][3];
+    computeInverseMatrix(plaintext, size, inversePlaintext);
+    matrixMultiply(ciphertext, inversePlaintext, keyMatrix, size);
+    printf("Recovered Key Matrix:\n");
+    displayMatrix(keyMatrix, size);
+}
+
+// Main program
+int main() {
+    // Example: 3x3 Hill Cipher
+    int size = 3; // Key matrix size
+
+    // Known plaintext-ciphertext pairs
+    int plaintext[3][3] = {
+        {7, 8, 11},  // PLAIN: "HEL"
+        {14, 4, 11}, // PLAIN: "OEL"
+        {15, 4, 17}  // PLAIN: "PER"
+    };
+
+    int ciphertext[3][3] = {
+        {19, 7, 22},  // CIPHER: "THW"
+        {13, 10, 6},  // CIPHER: "NKF"
+        {14, 4, 11}   // CIPHER: "OEL"
+    };
+
+    int keyMatrix[3][3];
+
+    // Solve for the key matrix using a known plaintext attack
+    solveKeyMatrix(plaintext, ciphertext, size, keyMatrix);
+
+    return 0;
+}
+
+// Function to display a matrix
+void displayMatrix(int matrix[3][3], int size) {
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            printf("%3d ", matrix[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+// Function to compute modular inverse of a number under modulo 26
+int modInverse(int a, int m) {
+    for (int x = 1; x < m; x++) {
+        if ((a * x) % m == 1) {
+            return x;
+        }
+    }
+    return -1; // No modular inverse
+}
+
+// Function to compute the inverse of a matrix modulo 26
+void computeInverseMatrix(int matrix[3][3], int size, int inverse[3][3]) {
+    int det = (matrix[0][0] * (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) -
+               matrix[0][1] * (matrix[1][0] * matrix[2][2] - matrix[1][2] * matrix[2][0]) +
+               matrix[0][2] * (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0])) % 26;
+
+    if (det < 0)
+        det += 26;
+
+    int detInverse = modInverse(det, 26);
+
+    if (detInverse == -1) {
+        printf("Matrix is not invertible under modulo 26.\n");
+        exit(1);
+    }
+
+    // Compute adjugate and modular inverse
+    inverse[0][0] = ((matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) * detInverse) % 26;
+    inverse[0][1] = ((matrix[0][2] * matrix[2][1] - matrix[0][1] * matrix[2][2]) * detInverse) % 26;
+    inverse[0][2] = ((matrix[0][1] * matrix[1][2] - matrix[0][2] * matrix[1][1]) * detInverse) % 26;
+    inverse[1][0] = ((matrix[1][2] * matrix[2][0] - matrix[1][0] * matrix[2][2]) * detInverse) % 26;
+    inverse[1][1] = ((matrix[0][0] * matrix[2][2] - matrix[0][2] * matrix[2][0]) * detInverse) % 26;
+    inverse[1][2] = ((matrix[0][2] * matrix[1][0] - matrix[0][0] * matrix[1][2]) * detInverse) % 26;
+    inverse[2][0] = ((matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0]) * detInverse) % 26;
+    inverse[2][1] = ((matrix[0][1] * matrix[2][0] - matrix[0][0] * matrix[2][1]) * detInverse) % 26;
+    inverse[2][2] = ((matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]) * detInverse) % 26;
+
+    // Ensure all values are positive modulo 26
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            inverse[i][j] = (inverse[i][j] + 26) % 26;
+        }
+    }
+}
+
+// Function to multiply two matrices modulo 26
+void matrixMultiply(int A[3][3], int B[3][3], int result[3][3], int size) {
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            result[i][j] = 0;
+            for (int k = 0; k < size; k++) {
+                result[i][j] += A[i][k] * B[k][j];
+            }
+            result[i][j] %= 26;
+        }
+    }
+}
