@@ -1,0 +1,80 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX_TEXT_LENGTH 1000
+#define ALPHABET_SIZE 26
+
+// Function to count letter frequency in ciphertext
+void countFrequency(char ciphertext[], int frequency[]) {
+    for (int i = 0; ciphertext[i] != '\0'; i++) {
+        if (isalpha(ciphertext[i])) {
+            ciphertext[i] = toupper(ciphertext[i]);
+            frequency[ciphertext[i] - 'A']++;
+        }
+    }
+}
+
+// Function to generate possible plaintexts based on frequency analysis
+void generatePlaintexts(char ciphertext[], int frequency[], int topN) {
+    // Create a frequency array sorted by letter frequency (descending)
+    int sortedIndices[ALPHABET_SIZE];
+    for (int i = 0; i < ALPHABET_SIZE; i++) {
+        sortedIndices[i] = i;
+    }
+
+    // Sort the frequencies in descending order (bubble sort)
+    for (int i = 0; i < ALPHABET_SIZE - 1; i++) {
+        for (int j = i + 1; j < ALPHABET_SIZE; j++) {
+            if (frequency[sortedIndices[i]] < frequency[sortedIndices[j]]) {
+                int temp = sortedIndices[i];
+                sortedIndices[i] = sortedIndices[j];
+                sortedIndices[j] = temp;
+            }
+        }
+    }
+
+    // Frequency mapping (e.g., most frequent cipher letter corresponds to 'E')
+    char commonLetters[] = {'E', 'T', 'A', 'O', 'I', 'N', 'S', 'H', 'R', 'D', 'L', 'U', 'C', 'M', 'F', 'Y', 'P', 'B', 'V', 'K', 'J', 'X', 'Q', 'Z'};
+
+    // Try all possible shifts by comparing the most frequent letter in ciphertext
+    for (int shiftIndex = 0; shiftIndex < topN; shiftIndex++) {
+        char possiblePlaintext[MAX_TEXT_LENGTH];
+        int shift = sortedIndices[shiftIndex] - (commonLetters[0] - 'A');
+
+        // Decrypt the ciphertext using the shift
+        for (int i = 0; ciphertext[i] != '\0'; i++) {
+            if (isalpha(ciphertext[i])) {
+                possiblePlaintext[i] = ((toupper(ciphertext[i]) - 'A' - shift + ALPHABET_SIZE) % ALPHABET_SIZE) + 'A';
+            } else {
+                possiblePlaintext[i] = ciphertext[i];
+            }
+        }
+
+        possiblePlaintext[strlen(ciphertext)] = '\0';
+        printf("Possible Plaintext %d: %s\n", shiftIndex + 1, possiblePlaintext);
+    }
+}
+
+int main() {
+    char ciphertext[MAX_TEXT_LENGTH];
+    int frequency[ALPHABET_SIZE] = {0};
+    int topN;
+
+    // Input the ciphertext
+    printf("Enter the ciphertext: ");
+    fgets(ciphertext, MAX_TEXT_LENGTH, stdin);
+    ciphertext[strcspn(ciphertext, "\n")] = '\0'; // Remove trailing newline
+
+    // Input the number of top possible plaintexts to show
+    printf("Enter the number of top possible plaintexts to display: ");
+    scanf("%d", &topN);
+
+    // Count the frequency of each letter in the ciphertext
+    countFrequency(ciphertext, frequency);
+
+    // Generate possible plaintexts based on letter frequency analysis
+    generatePlaintexts(ciphertext, frequency, topN);
+
+    return 0;
+}
