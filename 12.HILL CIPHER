@@ -1,0 +1,120 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+// Key matrix for encryption
+int keyMatrix[2][2] = {
+    {9, 4},
+    {5, 7}
+};
+
+// Function to calculate modular inverse of a number under modulo 26
+int modInverse(int a, int m) {
+    for (int x = 1; x < m; x++) {
+        if ((a * x) % m == 1) {
+            return x;
+        }
+    }
+    return -1;
+}
+
+// Function to compute determinant of a 2x2 matrix modulo 26
+int determinantMod26(int matrix[2][2]) {
+    int det = matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
+    return (det % 26 + 26) % 26; // Ensure positive modulo
+}
+
+// Function to compute the inverse of a 2x2 matrix modulo 26
+void inverseMatrixMod26(int matrix[2][2], int inverse[2][2]) {
+    int det = determinantMod26(matrix);
+    int detInv = modInverse(det, 26);
+
+    if (detInv == -1) {
+        printf("Matrix is not invertible under modulo 26.\n");
+        return;
+    }
+
+    // Compute inverse matrix
+    inverse[0][0] = matrix[1][1] * detInv % 26;
+    inverse[0][1] = -matrix[0][1] * detInv % 26;
+    inverse[1][0] = -matrix[1][0] * detInv % 26;
+    inverse[1][1] = matrix[0][0] * detInv % 26;
+
+    // Adjust for positive modulo
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 2; j++) {
+            inverse[i][j] = (inverse[i][j] + 26) % 26;
+        }
+    }
+}
+
+// Function to encrypt a pair of letters
+void encryptPair(int pair[2], int result[2]) {
+    result[0] = (keyMatrix[0][0] * pair[0] + keyMatrix[0][1] * pair[1]) % 26;
+    result[1] = (keyMatrix[1][0] * pair[0] + keyMatrix[1][1] * pair[1]) % 26;
+}
+
+// Function to decrypt a pair of letters
+void decryptPair(int pair[2], int result[2], int inverseKey[2][2]) {
+    result[0] = (inverseKey[0][0] * pair[0] + inverseKey[0][1] * pair[1]) % 26;
+    result[1] = (inverseKey[1][0] * pair[0] + inverseKey[1][1] * pair[1]) % 26;
+
+    // Ensure positive modulo
+    result[0] = (result[0] + 26) % 26;
+    result[1] = (result[1] + 26) % 26;
+}
+
+// Main program
+int main() {
+    char plaintext[] = "meetmeattheusualplaceattenratherthaneightoclock";
+    char ciphertext[256];
+    char decrypted[256];
+
+    // Prepare plaintext: remove spaces and convert to uppercase
+    int len = strlen(plaintext);
+    for (int i = 0; i < len; i++) {
+        plaintext[i] = toupper(plaintext[i]);
+    }
+
+    // Add padding if necessary
+    if (len % 2 != 0) {
+        plaintext[len++] = 'X';
+        plaintext[len] = '\0';
+    }
+
+    // Encrypt the plaintext
+    int pair[2], result[2];
+    for (int i = 0; i < len; i += 2) {
+        pair[0] = plaintext[i] - 'A';
+        pair[1] = plaintext[i + 1] - 'A';
+
+        encryptPair(pair, result);
+
+        ciphertext[i] = result[0] + 'A';
+        ciphertext[i + 1] = result[1] + 'A';
+    }
+    ciphertext[len] = '\0';
+
+    // Compute inverse key matrix
+    int inverseKey[2][2];
+    inverseMatrixMod26(keyMatrix, inverseKey);
+
+    // Decrypt the ciphertext
+    for (int i = 0; i < len; i += 2) {
+        pair[0] = ciphertext[i] - 'A';
+        pair[1] = ciphertext[i + 1] - 'A';
+
+        decryptPair(pair, result, inverseKey);
+
+        decrypted[i] = result[0] + 'A';
+        decrypted[i + 1] = result[1] + 'A';
+    }
+    decrypted[len] = '\0';
+
+    // Display results
+    printf("Plaintext: %s\n", plaintext);
+    printf("Ciphertext: %s\n", ciphertext);
+    printf("Decrypted: %s\n", decrypted);
+
+    return 0;
+}
