@@ -1,0 +1,26 @@
+#include <stdio.h>
+#include <math.h>
+
+// Function to calculate factorial
+unsigned long long factorial(int n) {
+    unsigned long long result = 1;
+    for (int i = 2; i <= n; i++) {
+        result *= i;
+    }
+    return result;
+}
+
+// Main program
+int main() {
+    int n = 25; // Number of letters in the Playfair matrix
+    unsigned long long fact = factorial(n);
+
+    // Compute log2(factorial)
+    double log2_fact = log2(fact);
+
+    // Display results
+    printf("Total number of possible keys for the Playfair cipher: %.0lf\n", log2_fact);
+    printf("Approximately 2^%.0lf keys.\n", log2_fact);
+
+    return 0;
+}
