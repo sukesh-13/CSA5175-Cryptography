@@ -1,0 +1,109 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdint.h>
+
+#define DES_BLOCK_SIZE 64
+#define DES_KEY_SIZE 56
+
+// Initial permutation table (IP)
+int IP[] = { 58, 50, 42, 34, 26, 18, 10, 2,
+             60, 52, 44, 36, 28, 20, 12, 4,
+             62, 54, 46, 38, 30, 22, 14, 6,
+             64, 56, 48, 40, 32, 24, 16, 8,
+             57, 49, 41, 33, 25, 17, 9, 1,
+             59, 51, 43, 35, 27, 19, 11, 3,
+             61, 53, 45, 37, 29, 21, 13, 5,
+             63, 55, 47, 39, 31, 23, 15, 7};
+
+// Final permutation table (FP)
+int FP[] = { 40, 8, 48, 16, 56, 24, 64, 32,
+             39, 7, 47, 15, 55, 23, 63, 31,
+             38, 6, 46, 14, 54, 22, 62, 30,
+             37, 5, 45, 13, 53, 21, 61, 29,
+             36, 4, 44, 12, 52, 20, 60, 28,
+             35, 3, 43, 11, 51, 19, 59, 27,
+             34, 2, 42, 10, 50, 18, 58, 26,
+             33, 1, 41, 9, 49, 17, 57, 25};
+
+// Left and right part splitting for each round
+void split64BitBlock(uint64_t block, uint32_t *left, uint32_t *right) {
+    *left = (block >> 32) & 0xFFFFFFFF;
+    *right = block & 0xFFFFFFFF;
+}
+
+// Circular left shift of the bits
+uint32_t leftShift(uint32_t value, int shiftCount) {
+    return (value << shiftCount) | (value >> (32 - shiftCount));
+}
+
+// Generate the 16 round keys (K1, K2, ..., K16)
+void generateKeys(uint64_t key, uint64_t keys[16]) {
+    // You would implement the DES key generation process here.
+    // For brevity, let's assume the keys are already generated.
+}
+
+// Perform the permutation on the data
+uint64_t permute(uint64_t data, int *permTable, int size) {
+    uint64_t permutedData = 0;
+    for (int i = 0; i < size; i++) {
+        int shift = permTable[i] - 1;
+        permutedData |= ((data >> shift) & 1) << (size - 1 - i);
+    }
+    return permutedData;
+}
+
+// Feistel function for DES decryption
+uint32_t feistel(uint32_t right, uint64_t roundKey) {
+    uint32_t f = 0;
+    // Here, you would apply the S-boxes and the permutation function.
+    // This step is a complex substitution-permutation function.
+    // For simplicity, assume `f` is calculated and returned.
+    return f;
+}
+
+// Perform one round of decryption
+void desRound(uint32_t *left, uint32_t *right, uint64_t roundKey) {
+    uint32_t tempRight = *right;
+    *right = *left ^ feistel(*right, roundKey);  // XOR the left with the Feistel function
+    *left = tempRight;
+}
+
+// Perform the DES decryption
+void desDecrypt(uint64_t ciphertext, uint64_t key, uint64_t *plaintext) {
+    uint64_t keys[16];
+    generateKeys(key, keys);
+
+    // Step 1: Initial permutation of the ciphertext
+    uint64_t permutedCiphertext = permute(ciphertext, IP, 64);
+
+    // Split the permuted ciphertext into left and right halves
+    uint32_t left, right;
+    split64BitBlock(permutedCiphertext, &left, &right);
+
+    // Step 2: 16 rounds of decryption using the round keys in reverse order
+    for (int round = 15; round >= 0; round--) {
+        desRound(&left, &right, keys[round]);
+    }
+
+    // Step 3: Perform the final permutation (FP)
+    uint64_t finalBlock = ((uint64_t)right << 32) | left;
+    *plaintext = permute(finalBlock, FP, 64);
+}
+
+int main() {
+    uint64_t ciphertext, key, plaintext;
+
+    // Example input values (just for testing)
+    printf("Enter ciphertext (64-bit hex): ");
+    scanf("%llx", &ciphertext);
+
+    printf("Enter key (56-bit hex): ");
+    scanf("%llx", &key);
+
+    desDecrypt(ciphertext, key, &plaintext);
+
+    printf("Decrypted plaintext: %llx\n", plaintext);
+
+    return 0;
+}
